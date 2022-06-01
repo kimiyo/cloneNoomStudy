@@ -11,4 +11,9 @@ npm i express
 npm i pug
 npm i ws
 npm i socket.io
+npm i -g localtunnel
+```
+
+```
+lt --port 3000
 ```
