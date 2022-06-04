@@ -8,6 +8,7 @@ app.set("view engine", "pug");
 app.set("views", __dirname + "/views");
 app.use("/public", express.static(__dirname + "/public"));
 app.get("/", (req,res)=> res.render("home"));
+app.get("/board", (req,res)=> res.render("board"));
 app.get("/*", (req,res)=> res.redirect("/"));
 
 const httpServer = http.createServer(app);
