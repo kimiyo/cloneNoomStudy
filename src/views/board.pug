@@ -5,13 +5,13 @@ html(lang="en")
         meta(http-equiv="X-UA-Compatible", content="IE=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         title Board
-        link(rel="stylesheet", href="https://unpkg.com/mvp.css")
+        link(rel="stylesheet", href="public/css/layout/border.css")
     body
         header
             h1 Board
         main
             div#menu
-                form
+                form.menu-form
                     input(placeholder="Board", required, type="text")
                     button My Board
             canvas#board(playsinline,width="400",height="400")

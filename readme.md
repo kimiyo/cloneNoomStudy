@@ -2,6 +2,10 @@
 
 Zoom clone using NodeJS, WebRTC and websockete
 
+## References
+
+- https://github.com/ShubhamSarda/web-development-projects.git
+- https://github.com/ShubhamSarda/wdf-code-files.git
 ## config
 
 ```
