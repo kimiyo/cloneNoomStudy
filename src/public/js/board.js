@@ -1,15 +1,19 @@
 const socket = io();
 
+const canvas = document.getElementById("board");
+
 const myFace = document.getElementById("myFace");
 const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const cameraSelect = document.getElementById("cameras");
 const call = document.getElementById("call");
+const myNameDisplay = call.querySelector("h2");
 
 let myStream;
 let muted = false;
 let camreaOff = false;
 let roomName;
+let myName;
 let myPeerConnection;
 let myDataChannel;
 
@@ -111,20 +115,23 @@ async function initCall(){
 }
 async function handleWelcomeSubmit(event){
     event.preventDefault();
-    const input = welcomeForm.querySelector("input");
+    const roomnameInput = welcomeForm.querySelector(".roomname");
+    const nameInput = welcomeForm.querySelector(".name");
     await initCall();
-    socket.emit("join_room", input.value);
-    roomName = input.value;
+    roomName = roomnameInput.value;
+    myName = nameInput.value;
+    socket.emit("join_room", roomName, myName);
+    myNameDisplay.innerText = myName;
     input.value = "";
 }
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
-socket.on("welcome",async ()=>{
+socket.on("welcome",async (myName)=>{
     myDataChannel = myPeerConnection.createDataChannel("chat");
     myDataChannel.addEventListener("message", (event)=>{
         console.log(event.data);
     });
-    console.log("made data channel");
+    console.log("made data channel from myName=",myName);
     const offer = await myPeerConnection.createOffer();
     myPeerConnection.setLocalDescription(offer);
     console.log('sent the offer');
@@ -186,4 +193,50 @@ function handleIce(data){
 function handleAddStream(data){
     const peerFace = document.getElementById("peerFace");
     peerFace.srcObject = data.stream;
+}
+
+
+// Canvas data interface
+const ctx = canvas.getContext('2d');
+let drawingBrush = { eventType: "Start" ,x: 0, y: 0 , color: '#ACD3ED' , width: 5};
+canvas.addEventListener('mousedown', start);
+canvas.addEventListener('mouseup', stop);
+
+async function sendData(drawingBrushBegin,drawingBrushEnd ) {
+    socket.emit("sendDrawingData",drawingBrushBegin,drawingBrushEnd , roomName, myName);
+}
+socket.on("sendDrawingData", async (drawingBrushBegin,drawingBrushEnd,myName ) =>{
+    console.log(myName,drawingBrushBegin,drawingBrushEnd);
+})
+
+// canvas.addEventListener('resize', resize);
+function start(event) {
+    canvas.addEventListener('mousemove', draw);
+    reposition(event,"Start");
+}
+function reposition(event,eventType) {
+    drawingBrush.x = event.clientX - canvas.offsetLeft;
+    drawingBrush.y = event.clientY - canvas.offsetTop;
+    drawingBrush.eventType = eventType;
+    sendData();
+    // coord.x = event.clientX ;
+    // coord.y = event.clientY ;
+}
+function stop() {
+    canvas.removeEventListener('mousemove', draw);
+    drawingBrush.eventType = "End";
+
+}
+function draw(event) {
+    const drawingBrushBegin = drawingBrush;
+    ctx.beginPath();
+    ctx.lineWidth = drawingBrush.width;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = drawingBrush.color;
+    ctx.moveTo(drawingBrush.x, drawingBrush.y);
+    reposition(event,"Move");
+    ctx.lineTo(drawingBrush.x, drawingBrush.y);
+    ctx.stroke();
+    const drawingBrushEnd = drawingBrush;
+    sendData(drawingBrushBegin,drawingBrushEnd );
 }

@@ -10,11 +10,22 @@ html(lang="en")
         header
             h1 Board
         main
-            div#menu
-                form.menu-form
-                    input(placeholder="Board", required, type="text")
-                    button My Board
-            canvas#board(playsinline,width="400",height="400")
+            div#welcome
+                form.welcome-form
+                    input.roomname(placeholder="room name", required, type="text")
+                    input.name(placeholder="name", required, type="text")
+                    button.button-1 Enter room
+            div#call.call
+                div
+                    video#myFace(autoplay,playsinline,width="80", height="60")
+                    video#peerFace(autoplay,playsinline,width="80", height="60")
+                    h2 whoami
+                div#myStream
+                div.control
+                    button#mute Mute
+                    button#camera Tuen Camera Off
+                    select#cameras
+            canvas#board(width="800",height="400")
         script(src="/socket.io/socket.io.js")
         script(src="/public/js/board.js")
     
