@@ -7,15 +7,21 @@ const muteBtn = document.getElementById("mute");
 const cameraBtn = document.getElementById("camera");
 const cameraSelect = document.getElementById("cameras");
 const call = document.getElementById("call");
+const changeColorBtn = document.getElementById("changecolor");
+const newLineBtn = document.getElementById("newline");
 const myNameDisplay = call.querySelector("h2");
 
 let myStream;
-let muted = false;
+let muted = false; // 시작하면 toggle 되면서 Mute로 함
 let camreaOff = false;
 let roomName;
-let myName;
+let mySelf; //myName;
 let myPeerConnection;
 let myDataChannel;
+let myColor = '#aeaeae';
+let myShapeNo = 1;
+const colorValues = ['black','red','green','yellow','blue','gray'];
+let pickColorIdx = 0;
 
 async function getCameras(){
     try {
@@ -53,6 +59,7 @@ async function getMedia(deviceId){
         if (!deviceId) {
             await getCameras();
         }
+        handleMuteClick();
     } catch(e){
         console.log(e);
     }
@@ -93,7 +100,6 @@ async function handleCameraChange(){
                         .getSenders()
                         .find((sender)=>sender.track.kind === "video");
         videoSender.replaceTrack(videoTrack);
-                        
     }
 }
 
@@ -119,19 +125,22 @@ async function handleWelcomeSubmit(event){
     const nameInput = welcomeForm.querySelector(".name");
     await initCall();
     roomName = roomnameInput.value;
-    myName = nameInput.value;
-    socket.emit("join_room", roomName, myName);
-    myNameDisplay.innerText = myName;
-    input.value = "";
+    mySelf = {
+        name: nameInput.value,
+        userId: socket.id
+    };
+    socket.emit("join_room", roomName, mySelf);
+    myNameDisplay.innerText = `${mySelf.name} in ${roomName}`;
+    nameInput.value = "";
 }
 welcomeForm.addEventListener("submit", handleWelcomeSubmit);
 
-socket.on("welcome",async (myName)=>{
+socket.on("welcome",async (senderProfile)=>{
     myDataChannel = myPeerConnection.createDataChannel("chat");
     myDataChannel.addEventListener("message", (event)=>{
         console.log(event.data);
     });
-    console.log("made data channel from myName=",myName);
+    console.log("made data channel from senderProfile=",senderProfile);
     const offer = await myPeerConnection.createOffer();
     myPeerConnection.setLocalDescription(offer);
     console.log('sent the offer');
@@ -196,47 +205,75 @@ function handleAddStream(data){
 }
 
 
-// Canvas data interface
+// Canvas data interface ----------------------------------------------------
+
 const ctx = canvas.getContext('2d');
-let drawingBrush = { eventType: "Start" ,x: 0, y: 0 , color: '#ACD3ED' , width: 5};
-canvas.addEventListener('mousedown', start);
-canvas.addEventListener('mouseup', stop);
-
-async function sendData(drawingBrushBegin,drawingBrushEnd ) {
-    socket.emit("sendDrawingData",drawingBrushBegin,drawingBrushEnd , roomName, myName);
+let config = { 
+    lineWidth: 5, 
+    lineColor: myColor, 
+    fillColor: '#FFFFFF',
+    owner: mySelf
 }
-socket.on("sendDrawingData", async (drawingBrushBegin,drawingBrushEnd,myName ) =>{
-    console.log(myName,drawingBrushBegin,drawingBrushEnd);
+let currentShape = "LINE";
+let shapes = [];
+function  newLine() {
+    config.lineColor = myColor;
+    config.owner = mySelf;
+    myShapeNo += 1;
+    const line = new Line(config, ctx, canvas,myShapeNo);
+    // console.log("config:",config);
+    // console.log("new line:",line);
+    shapes.push(line);
+    setEventListenerForLine(line,()=>{
+        nextTask();
+    });
+}
+function nextTask() {
+    // console.log("nextTask() shapes:",shapes);
+    if (currentShape === "LINE") {
+        newLine();
+    }
+}
+// newLine();
+
+function handlerNewLine(event) {
+    newLine();
+}
+newLineBtn.addEventListener("click", handlerNewLine);
+function handlerChangeColor(event) {
+    pickColorIdx = (pickColorIdx + 1) % colorValues.length;
+    changeColorBtn.style.color = colorValues[pickColorIdx];
+    myColor = colorValues[pickColorIdx];
+    config.lineColor = myColor;
+    newLine();
+}
+changeColorBtn.addEventListener("click", handlerChangeColor);
+
+
+async function sendData(shape ) {
+    // console.log("sendData:",shape);
+    socket.emit("sendDrawingData",shape , roomName, mySelf);
+}
+socket.on("sendDrawingData", async (shape,senderProfile ) =>{
+    // console.log("sendDrawingData:",senderProfile,shape);
+    if(shape.shapeType === "LINE") {
+        drawLineForOther(shape,ctx);
+        const foundIndex = getIndexOfShape(shape);
+        if (foundIndex === -1) {
+            shapes.push(shape);
+        } else {
+            shapes[foundIndex] = shape;
+        }
+        // console.log(foundIndex,"shapes:",shapes);
+    }
 })
-
-// canvas.addEventListener('resize', resize);
-function start(event) {
-    canvas.addEventListener('mousemove', draw);
-    reposition(event,"Start");
-}
-function reposition(event,eventType) {
-    drawingBrush.x = event.clientX - canvas.offsetLeft;
-    drawingBrush.y = event.clientY - canvas.offsetTop;
-    drawingBrush.eventType = eventType;
-    sendData();
-    // coord.x = event.clientX ;
-    // coord.y = event.clientY ;
-}
-function stop() {
-    canvas.removeEventListener('mousemove', draw);
-    drawingBrush.eventType = "End";
-
-}
-function draw(event) {
-    const drawingBrushBegin = drawingBrush;
-    ctx.beginPath();
-    ctx.lineWidth = drawingBrush.width;
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = drawingBrush.color;
-    ctx.moveTo(drawingBrush.x, drawingBrush.y);
-    reposition(event,"Move");
-    ctx.lineTo(drawingBrush.x, drawingBrush.y);
-    ctx.stroke();
-    const drawingBrushEnd = drawingBrush;
-    sendData(drawingBrushBegin,drawingBrushEnd );
+function getIndexOfShape(shape) {
+    let foundIndex = -1;
+    for(let i = 0; i < shapes.length;i++) {
+        if (shapes[i].owner.userId === shape.owner.userId 
+            && shapes[i].shapeId === shape.shapeId ) {
+                foundIndex = i;
+            }
+    }
+    return foundIndex;
 }

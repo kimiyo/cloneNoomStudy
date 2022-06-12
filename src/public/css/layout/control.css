@@ -1,14 +1,34 @@
 .control {
   display: flex;
-  justify-content: space-between;
+  justify-content: left;
 }
 
 .control button,
 .control select{
-  width: 30%;
+  width: 100px;
   height: 40px;
-  padding: 5px;
+  padding: 0px;
+  text-align: center;
+  border: 1px solid #aeaeae;
+  border-radius: 8px;
 }
+
+.toolbar {
+  display: flex;
+  justify-content: left;
+}
+
+.toolbar .toolitem{
+  width: 100px;
+  height: 38px;
+  padding: 0px;
+  margin: 0px;
+  text-align: center;
+  border: 1px solid #aeaeae;
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
 
 @media screen and (max-width: 500px){
   .control{

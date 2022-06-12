@@ -15,8 +15,12 @@ canvas {
   text-align: center;
 }
 
-#myFace {
+#myFace, #peerFace {
   background-color: #ed8fd1;
   border-radius: 8px;
+}
+
+.toolbar {
+  margin-left: 5px;
 }
 /*# sourceMappingURL=border.css.map */

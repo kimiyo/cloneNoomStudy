@@ -5,7 +5,9 @@ html(lang="en")
         meta(http-equiv="X-UA-Compatible", content="IE=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         title Board
+        link(rel="stylesheet", href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css")
         link(rel="stylesheet", href="public/css/layout/border.css")
+        //- link(rel="stylesheet", href="public/css/layout/control.css")
     body
         header
             h1 Board
@@ -16,16 +18,24 @@ html(lang="en")
                     input.name(placeholder="name", required, type="text")
                     button.button-1 Enter room
             div#call.call
-                div
+                div.toolbar
+                    h2 whoami
                     video#myFace(autoplay,playsinline,width="80", height="60")
                     video#peerFace(autoplay,playsinline,width="80", height="60")
-                    h2 whoami
                 div#myStream
                 div.control
-                    button#mute Mute
-                    button#camera Tuen Camera Off
-                    select#cameras
+                    button.btn.btn-default#mute Mute
+                    button.btn.btn-default#camera Tuen Camera Off
+                    select.btn.btn-default#cameras
+                        option hello this is a good media
+            div.control
+                div.btn.btn-default#newline         New Line
+                div.btn.btn-default#newrectangle    New Rectangle
+                div.btn.btn-default#changecolor     Change Color
+                        //- div.toolitem         NewStar
+                        //- div.toolitem     ChangeShange
             canvas#board(width="800",height="400")
         script(src="/socket.io/socket.io.js")
+        script(src="/public/js/line.js")
         script(src="/public/js/board.js")
     

@@ -15,9 +15,9 @@ const httpServer = http.createServer(app);
 const wsServer  = SocketIO(httpServer);
 
 wsServer.on("connection",(socket)=>{
-    socket.on("join_room",(roomName,myName)=>{
+    socket.on("join_room",(roomName,senderProfile)=>{
         socket.join(roomName);
-        socket.to(roomName).emit("welcome",myName);
+        socket.to(roomName).emit("welcome",senderProfile);
     });
     socket.on("offer",(offer,roomName)=>{
         socket.to(roomName).emit("offer", offer);
@@ -28,8 +28,8 @@ wsServer.on("connection",(socket)=>{
     socket.on("ice",(ice,roomName)=>{
         socket.to(roomName).emit("ice",ice);
     });
-    socket.on("sendDrawingData",(drawingBrushBegin,drawingBrushEnd , roomName,myName)=>{
-        socket.to(roomName).emit("sendDrawingData",drawingBrushBegin,drawingBrushEnd, myName );
+    socket.on("sendDrawingData",(shape , roomName,senderProfile)=>{
+        socket.to(roomName).emit("sendDrawingData",shape, senderProfile );
     });
 })
 
