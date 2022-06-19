@@ -1,28 +1,44 @@
-let currentLine
 let resetFunction
-function setEventListenerForLine(line, callback) {
-  currentLine = line;
-  currentLine.canvas.addEventListener('mousedown', mouseDownForLine);
-  currentLine.canvas.addEventListener('mouseup', mouseUpForLine);
+// Exposing functions to external -----------------------------
+function  newLine() {
+  setEventListenerForLine(()=>{
+      nextTask();
+  });
+}
+
+
+
+// internal Functions & Variables -----------------------------
+function setEventListenerForLine(callback) {
+  canvas.addEventListener('mousedown', mouseDownForLine);
+  canvas.addEventListener('mouseup', mouseUpForLine);
   resetFunction = callback;
 }
 function mouseDownForLine(event) {
-  const firstPosition = currentLine.getPosition(event);
-  currentLine.points.push(firstPosition);
-  currentLine.canvas.addEventListener('mousemove', mouseMoveForLine);
+  config.lineColor = myColor;
+  config.owner = mySelf;
+  myShapeNo += 1;
+  const line = new Line(config, myShapeNo);
+  shapes.push(line);
+  currentShape = line;
+  //
+  const firstPosition = currentShape.getPosition(event);
+  currentShape.points.push(firstPosition);
+  //
+  canvas.addEventListener('mousemove', mouseMoveForLine);
 }
 function mouseMoveForLine(event) {
-  currentLine.mouseMove(event);
-  sendData(currentLine);
+  currentShape.mouseMove(event);
+  sendData(currentShape);
 }
 function mouseUpForLine(event) {
-  currentLine.canvas.removeEventListener('mousemove', mouseMoveForLine);
-  currentLine.canvas.removeEventListener('mousedown', mouseDownForLine);
-  currentLine.canvas.removeEventListener('mouseup', mouseUpForLine);
+  canvas.removeEventListener('mousemove', mouseMoveForLine);
+  canvas.removeEventListener('mousedown', mouseDownForLine);
+  canvas.removeEventListener('mouseup', mouseUpForLine);
   resetFunction();
 }
 
-async function drawLineForOther(line,ctx) {
+async function drawLineForOther(line) {
   for (let i = 1; i < line.points.length; i++) {
     const pointBegin = line.points[i-1];
     const pointEnd = line.points[i];
@@ -37,16 +53,14 @@ async function drawLineForOther(line,ctx) {
 }
 
 class Line {
-  constructor (config,ctx, canvas, shapeNo){
-    this.shapeType = "LINE";
+  constructor (config, shapeNo){
+    this.shapeType = SHAPETYPE_LINE;
     this.lineWidth = config.lineWidth;
     this.lineColor = config.lineColor;
     this.fillColor = config.fillColor;
     this.owner = config.owner;
     this.shapeId = shapeNo; // KEY : this.owner.userId + this.shapeId
     this.points = [];
-    this.ctx = ctx;
-    this.canvas = canvas;
     // console.log(`${this.canvas}`);
   }
 
@@ -61,17 +75,9 @@ class Line {
       return {x:x, y:y}
   }
   draw() {
-      for (let i = 1; i < this.points.length; i++) {
-        this.drawTwoPoint(this.points[i-1],this.points[i]);
-      }
-  }
-  drawTwoPoint(pointBegin,pointEnd) {
-      this.ctx.beginPath();
-      this.ctx.lineWidth = this.lineWidth;
-      this.ctx.lineCap = 'round';
-      this.ctx.strokeStyle = this.lineColor;
-      this.ctx.moveTo(pointBegin.x, pointBegin.y);
-      this.ctx.lineTo(pointEnd.x, pointEnd.y);
-      this.ctx.stroke();
+      // for (let i = 1; i < this.points.length; i++) {
+      //   this.drawTwoPoint(this.points[i-1],this.points[i]);
+      // }
+      drawLineForOther(this); 
   }
 }

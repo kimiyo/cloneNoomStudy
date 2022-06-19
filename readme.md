@@ -27,3 +27,14 @@ lt --port 3000
 ## SaSS / SCSS
 
 - install Live SaSS Compiler
+
+
+## https://ejdb.org/
+
+- Pure C11 Embeddable JSON Database engine
+- Single file database
+- Online backups support
+- iOS / Android / React Native / Flutter
+- Fault tolerant storage backed by WAL
+- HTTP REST / Websockets network endpoints
+- C / Java / NodeJS / Dart / Flutter / Android / iOS

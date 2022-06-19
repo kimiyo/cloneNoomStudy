@@ -9,6 +9,7 @@ const cameraSelect = document.getElementById("cameras");
 const call = document.getElementById("call");
 const changeColorBtn = document.getElementById("changecolor");
 const newLineBtn = document.getElementById("newline");
+const newRectBtn = document.getElementById("newrectangle");
 const myNameDisplay = call.querySelector("h2");
 
 let myStream;
@@ -18,10 +19,6 @@ let roomName;
 let mySelf; //myName;
 let myPeerConnection;
 let myDataChannel;
-let myColor = '#aeaeae';
-let myShapeNo = 1;
-const colorValues = ['black','red','green','yellow','blue','gray'];
-let pickColorIdx = 0;
 
 async function getCameras(){
     try {
@@ -52,6 +49,8 @@ async function getMedia(deviceId){
         video: { deviceId: {exact: deviceId}}
     };
     try {
+        console.log("navigator:",navigator)
+        console.log("navigator.mediaDevices:",navigator.mediaDevices)
         myStream = await navigator.mediaDevices.getUserMedia(
             deviceId? cameraConstraints : initialConstraints
         );
@@ -119,7 +118,7 @@ async function initCall(){
     await getMedia();
     makeConnection();
 }
-async function handleWelcomeSubmit(event){
+async function handleWelcomeSubmit(event){ // create Room 
     event.preventDefault();
     const roomnameInput = welcomeForm.querySelector(".roomname");
     const nameInput = welcomeForm.querySelector(".name");
@@ -145,6 +144,9 @@ socket.on("welcome",async (senderProfile)=>{
     myPeerConnection.setLocalDescription(offer);
     console.log('sent the offer');
     socket.emit("offer", offer, roomName);
+});
+socket.on("join_room_response", async(message)=>{
+    console.log("join_room_response",message);
 });
 
 socket.on("offer", async (offer) =>{
@@ -206,66 +208,83 @@ function handleAddStream(data){
 
 
 // Canvas data interface ----------------------------------------------------
-
+// Define Common Variables 
 const ctx = canvas.getContext('2d');
+let myColor = '#aeaeae';
+let myShapeNo = 1;
+const colorValues = ['black','red','orange','yellow','green','blue','dark blue','purple','gray'];
+let pickColorIdx = 0;
+
 let config = { 
     lineWidth: 5, 
     lineColor: myColor, 
     fillColor: '#FFFFFF',
-    owner: mySelf
+    owner: mySelf,
+    defaultShapeSize: 50
 }
-let currentShape = "LINE";
 let shapes = [];
-function  newLine() {
-    config.lineColor = myColor;
-    config.owner = mySelf;
-    myShapeNo += 1;
-    const line = new Line(config, ctx, canvas,myShapeNo);
-    // console.log("config:",config);
-    // console.log("new line:",line);
-    shapes.push(line);
-    setEventListenerForLine(line,()=>{
-        nextTask();
-    });
-}
+const SHAPETYPE_LINE = "LINE"
+const SHAPETYPE_RECT = "RECT"
+let currentShape;
+// ======================== LINE =====================================
 function nextTask() {
     // console.log("nextTask() shapes:",shapes);
-    if (currentShape === "LINE") {
-        newLine();
+    if (currentShape.shapeType === SHAPETYPE_LINE) {
+        newLine(); // defined in line.js
+    }
+    else if (currentShape.shapeType === SHAPETYPE_RECT) {
+        // newRect(); // defined in line.js
     }
 }
 // newLine();
 
 function handlerNewLine(event) {
+    if (SHAPETYPE_RECT === "RECT") { 
+        setEventListenerForRect();
+    }
     newLine();
 }
+// function handlerNewRect(event) {
+//     newRect();
+// }
+// for Buttons 
 newLineBtn.addEventListener("click", handlerNewLine);
-function handlerChangeColor(event) {
+newRectBtn.addEventListener("click", setEventListenerForNewRect);
+function handlerChangeColor(event) { // common for all shapes....
     pickColorIdx = (pickColorIdx + 1) % colorValues.length;
     changeColorBtn.style.color = colorValues[pickColorIdx];
     myColor = colorValues[pickColorIdx];
     config.lineColor = myColor;
-    newLine();
+    // changeColorBtn.style.border.color = myColor;
+    if (currentShape === SHAPETYPE_LINE) {
+        newLine(); // defined in line.js
+    }
+    else if (currentShape === SHAPETYPE_RECT) {
+        // newRect(); // defined in line.js
+    }
 }
 changeColorBtn.addEventListener("click", handlerChangeColor);
 
-
+// For Sharing data among teams ==========================
 async function sendData(shape ) {
     // console.log("sendData:",shape);
     socket.emit("sendDrawingData",shape , roomName, mySelf);
 }
 socket.on("sendDrawingData", async (shape,senderProfile ) =>{
     // console.log("sendDrawingData:",senderProfile,shape);
-    if(shape.shapeType === "LINE") {
-        drawLineForOther(shape,ctx);
-        const foundIndex = getIndexOfShape(shape);
-        if (foundIndex === -1) {
-            shapes.push(shape);
-        } else {
-            shapes[foundIndex] = shape;
-        }
-        // console.log(foundIndex,"shapes:",shapes);
+    const foundIndex = getIndexOfShape(shape);
+    if (foundIndex === -1) {
+        shapes.push(shape);
+    } else {
+        shapes[foundIndex] = shape;
     }
+    if(shape.shapeType === SHAPETYPE_LINE) {
+        drawLineForOther(shape,ctx);
+    }
+    if(shape.shapeType === SHAPETYPE_RECT) {
+        drawRectForOther(shape,ctx);
+    }
+    // console.log(foundIndex,"shapes:",shapes);
 })
 function getIndexOfShape(shape) {
     let foundIndex = -1;
@@ -277,3 +296,4 @@ function getIndexOfShape(shape) {
     }
     return foundIndex;
 }
+
